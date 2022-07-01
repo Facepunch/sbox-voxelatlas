@@ -16,16 +16,16 @@ public class Sprite
 	public string FilePath { get; set; }
 	public string Name { get; set; }
 
-	public void Load()
+	public void Load( Atlas atlas )
 	{
 		//var texture = Texture.Load( FileSystem.Root, FilePath );
 		var absolutePath = Path.Join( Directory.GetCurrentDirectory(), FilePath ).NormalizeFilename( false );
 
-		Image = new Pixmap( 32, 32 );
+		Image = new Pixmap( atlas.SpriteSize, atlas.SpriteSize );
 		Image.Clear( new Color( 0f, 0f, 0f, 0f ) );
 
 		Paint.Target( Image );
-		Paint.Draw( new Rect( 0f, 0f, 32f, 32f ), absolutePath );
+		Paint.Draw( new Rect( 0f, 0f, atlas.SpriteSize, atlas.SpriteSize ), absolutePath );
 	}
 }
 
@@ -40,8 +40,8 @@ public class SpritePreview : Widget
 	public void SetSprite( Sprite sprite )
 	{
 		Sprite = sprite;
-		Width = 32;
-		Height = 32;
+		Width = sprite.Image.Width;
+		Height = sprite.Image.Height;
 	}
 
 	protected override void OnPaint()
@@ -67,7 +67,7 @@ public class AtlasPreview : Widget
 	{
 	}
 
-	public void SetSprites( List<Sprite> sprites )
+	public void SetAtlas( Atlas atlas )
 	{
 		if ( Previews  != null )
 		{
@@ -80,28 +80,28 @@ public class AtlasPreview : Widget
 		var maxWidth = Parent.Width - 80;
 
 		Previews = new();
-		Sprites = sprites;
+		Sprites = atlas.Sprites;
 		Width = 0f;
-		Height = 32f;
+		Height = atlas.SpriteSize;
 
 		var x = 0f;
 		var y = 0f;
 
-		foreach ( var sprite in sprites )
+		foreach ( var sprite in Sprites )
 		{
 			var preview = new SpritePreview( this );
 			preview.SetSprite( sprite );
 			preview.Visible = true;
 			preview.Position = new Vector2( x, y );
 
-			Width = MathF.Min( Width + 32f, maxWidth );
+			Width = MathF.Min( Width + atlas.SpriteSize, maxWidth );
 
-			x += 32f;
+			x += atlas.SpriteSize;
 
-			if ( x + 32f >= maxWidth )
+			if ( x + atlas.SpriteSize >= maxWidth )
 			{
-				Height += 32f;
-				y += 32f;
+				Height += atlas.SpriteSize;
+				y += atlas.SpriteSize;
 				x = 0f;
 			}
 
@@ -124,7 +124,6 @@ public class Atlas
 
 	public void LoadSprites()
 	{
-
 		Sprites.Clear();
 
 		var absolutePath = Path.Join( Directory.GetCurrentDirectory(), SpriteFolder ).NormalizeFilename( false );
@@ -137,7 +136,7 @@ public class Atlas
 
 			sprite.FilePath = relativePath;
 			sprite.Name = fileName;
-			sprite.Load();
+			sprite.Load( this );
 
 			Sprites.Add( sprite );
 		}
@@ -353,15 +352,15 @@ public class VoxelAtlasTool : Window
 	private void UpdatePixmap()
 	{
 		var width = 0;
-		var height = 32;
+		var height = CurrentAtlas.SpriteSize;
 
 		foreach ( var sprite in CurrentAtlas.Sprites )
 		{
-			width += 32;
+			width += CurrentAtlas.SpriteSize;
 
 			if ( width >= 2048 )
 			{
-				height += 32;
+				height += CurrentAtlas.SpriteSize;
 				width = 0;
 			}
 		}
@@ -376,13 +375,13 @@ public class VoxelAtlasTool : Window
 
 		foreach ( var sprite in CurrentAtlas.Sprites )
 		{
-			Paint.Draw( new Rect( x, y, 32f, 32f ), sprite.Image );
+			Paint.Draw( new Rect( x, y, CurrentAtlas.SpriteSize, CurrentAtlas.SpriteSize ), sprite.Image );
 
-			x += 32;
+			x += CurrentAtlas.SpriteSize;
 
 			if ( x >= width )
 			{
-				y += 32;
+				y += CurrentAtlas.SpriteSize;
 				x = 0;
 			}
 		}
@@ -431,11 +430,9 @@ public class VoxelAtlasTool : Window
 			}
 			if ( SpriteSizeSlider == null )
 			{
-				/*
 				SpriteSizeSlider = new IntEditor( View );
 				SpriteSizeSlider.Value = CurrentAtlas.SpriteSize;
 				SpriteSizeSlider.OnValueEdited += OnSpriteSizeChanged;
-				*/
 			}
 
 			View.Width = Width;
@@ -446,7 +443,7 @@ public class VoxelAtlasTool : Window
 				Preview = new AtlasPreview( View );
 			}
 
-			Preview.SetSprites( CurrentAtlas.Sprites );
+			Preview.SetAtlas( CurrentAtlas );
 			Preview.Position = new Vector2( Width * 0.5f, Height * 0.5f ) - Preview.Size * 0.5f;
 			Preview.Position = Preview.Position - new Vector2( 0f, 64f );
 			Preview.Visible = true;
@@ -472,6 +469,9 @@ public class VoxelAtlasTool : Window
 		if ( CurrentAtlas != null )
 		{
 			CurrentAtlas.SpriteSize = SpriteSizeSlider.Value;
+			CurrentAtlas.LoadSprites();
+			UpdatePixmap();
+			Initialize();
 		}
 	}
 }
