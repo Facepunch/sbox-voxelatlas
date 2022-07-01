@@ -5,6 +5,7 @@ using System.IO;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
+using System;
 
 namespace Facepunch.Voxels;
 
@@ -28,34 +29,88 @@ public class Sprite
 	}
 }
 
+public class SpritePreview : Widget
+{
+	public Sprite Sprite { get; private set; }
+
+	public SpritePreview( Widget parent ) : base( parent )
+	{
+	}
+
+	public void SetSprite( Sprite sprite )
+	{
+		Sprite = sprite;
+		Width = 32;
+		Height = 32;
+	}
+
+	protected override void OnPaint()
+	{
+		if ( Sprite != null )
+		{
+			Paint.SetBrush( Sprite.Image );
+			Paint.ClearPen();
+			Paint.Scale( 1f, 1f );
+			Paint.DrawRect( new Rect( 0, 0, Sprite.Image.Width, Sprite.Image.Height ) );
+		}
+
+		base.OnPaint();
+	}
+}
+
 public class AtlasPreview : Widget
 {
-	public Pixmap AtlasPixmap { get; private set; }
-
-	private float Scale { get; set; }
+	public List<Sprite> Sprites { get; private set; }
+	public List<SpritePreview> Previews { get; private set; }
 
 	public AtlasPreview( Widget parent ) : base( parent )
 	{
 	}
 
-	public void SetAtlasPixmap( Pixmap pixmap )
+	public void SetSprites( List<Sprite> sprites )
 	{
-		AtlasPixmap = pixmap;
-		Scale = Parent.Width / pixmap.Width;
-		Width = pixmap.Width * Scale;
-		Height = pixmap.Height * Scale;
+		if ( Previews  != null )
+		{
+			foreach ( var preview in Previews )
+			{
+				preview.Destroy();
+			}
+		}
+
+		var maxWidth = Parent.Width - 80;
+
+		Previews = new();
+		Sprites = sprites;
+		Width = 0f;
+		Height = 32f;
+
+		var x = 0f;
+		var y = 0f;
+
+		foreach ( var sprite in sprites )
+		{
+			var preview = new SpritePreview( this );
+			preview.SetSprite( sprite );
+			preview.Visible = true;
+			preview.Position = new Vector2( x, y );
+
+			Width = MathF.Min( Width + 32f, maxWidth );
+
+			x += 32f;
+
+			if ( x + 32f >= maxWidth )
+			{
+				Height += 32f;
+				y += 32f;
+				x = 0f;
+			}
+
+			Previews.Add( preview );
+		}
 	}
 
 	protected override void OnPaint()
 	{
-		if ( AtlasPixmap != null )
-		{
-			Paint.SetBrush( AtlasPixmap );
-			Paint.ClearPen();
-			Paint.Scale( Scale, Scale );
-			Paint.DrawRect( new Rect( 0, 0, AtlasPixmap.Width, AtlasPixmap.Height ) );
-		}
-
 		base.OnPaint();
 	}
 }
@@ -121,11 +176,11 @@ public class SpriteWidget : Widget
 [Tool( "Voxel Atlas", "grid_on", "Create atlases by packing multiple images into a single texture" )]
 public class VoxelAtlasTool : Window
 {
-	private List<SpriteWidget> SpriteWidgets { get; set; } = new();
 	private Atlas CurrentAtlas { get; set; }
 	private Option SaveOption { get; set; }
 	private Option FolderOption { get; set; }
 	private Pixmap AtlasPixmap { get; set; }
+	private AtlasPreview Preview { get; set; }
 	private Widget View { get; set; }
 
 	public VoxelAtlasTool()
@@ -300,30 +355,31 @@ public class VoxelAtlasTool : Window
 	private void Initialize()
 	{
 		Clear();
+
 		BuildMenuBar();
 
-		foreach ( var widget in SpriteWidgets )
+		if ( View == null )
 		{
-			widget.Destroy();
+			View = new Widget( this );
+			View.SetLayout( LayoutMode.TopToBottom );
+			View.Position = new Vector2( 0f, 64f );
+			View.Visible = true;
 		}
 
-		View?.Destroy();
-
-		View = new Widget( this );
-		View.SetLayout( LayoutMode.TopToBottom );
-		View.Position = new Vector2( 0f, 64f );
-		View.Visible = true;
-
-		if ( AtlasPixmap != null )
+		if ( CurrentAtlas != null )
 		{
 			View.Width = Width;
 			View.Height = Height;
 
-			var preview = new AtlasPreview( View );
-			preview.Visible = true;
-			preview.SetAtlasPixmap( AtlasPixmap );
-			preview.Position = new Vector2( Width * 0.5f, Height * 0.5f ) - preview.Size * 0.5f;
-			preview.Position = preview.Position - new Vector2( 16f, 64f );
+			if ( Preview == null )
+			{
+				Preview = new AtlasPreview( View );
+			}
+
+			Preview.SetSprites( CurrentAtlas.Sprites );
+			Preview.Position = new Vector2( Width * 0.5f, Height * 0.5f ) - Preview.Size * 0.5f;
+			Preview.Position = Preview.Position - new Vector2( 0f, 64f );
+			Preview.Visible = true;
 
 			SaveOption.Enabled = true;
 			FolderOption.Enabled = true;
