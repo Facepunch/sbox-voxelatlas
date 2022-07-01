@@ -120,14 +120,11 @@ public class Atlas
 	public List<Sprite> Sprites { get; set; } = new();
 	public string SpriteFolder { get; set; }
 	public string FileName { get; set; }
-
-	public Atlas()
-	{
-
-	}
+	public int SpriteSize { get; set; } = 32;
 
 	public void LoadSprites()
 	{
+
 		Sprites.Clear();
 
 		var absolutePath = Path.Join( Directory.GetCurrentDirectory(), SpriteFolder ).NormalizeFilename( false );
@@ -181,6 +178,7 @@ public class VoxelAtlasTool : Window
 	private Option FolderOption { get; set; }
 	private Pixmap AtlasPixmap { get; set; }
 	private AtlasPreview Preview { get; set; }
+	private IntEditor SpriteSizeSlider { get; set; }
 	private Widget View { get; set; }
 
 	public VoxelAtlasTool()
@@ -201,6 +199,46 @@ public class VoxelAtlasTool : Window
 	{
 		Initialize();
 		base.OnResize();
+	}
+
+	protected override void OnPaint()
+	{
+		base.OnPaint();
+
+		if ( CurrentAtlas == null )
+		{
+			var center = Size * 0.5f;
+			var boxSize = new Vector2( Width * 0.8f, Height * 0.1f );
+			var text = "No atlas is currently loaded.";
+
+			Paint.ClearBrush();
+			Paint.SetPen( Color.Red.Darken( 0.5f ) );
+			Paint.SetBrush( Color.Red.Darken( 0.7f ) );
+
+			var boxRect = new Rect( center.x - boxSize.x * 0.5f, center.y - boxSize.y * 0.5f, boxSize.x, boxSize.y );
+			Paint.DrawRect( boxRect, 8f );
+
+			Paint.SetPen( Color.Red.Darken( 0.3f ) );
+			Paint.SetDefaultFont( 12 );
+			Paint.DrawText( boxRect, text, TextFlag.Center );
+		}
+		else if ( SpriteSizeSlider != null )
+		{
+			var center = new Vector2( Width * 0.5f, 120f );
+			var boxSize = new Vector2( Width * 0.5f, 80f );
+			var text = "Sprite Size";
+
+			Paint.ClearBrush();
+			Paint.SetPen( Color.Green.Darken( 0.5f ) );
+			Paint.SetBrush( Color.Green.Darken( 0.7f ) );
+
+			var boxRect = new Rect( center.x - boxSize.x * 0.5f, center.y - boxSize.y * 0.5f, boxSize.x, boxSize.y );
+			Paint.DrawRect( boxRect, 8f );
+
+			Paint.SetPen( Color.Green.Darken( 0.3f ) );
+			Paint.SetDefaultFont( 12 );
+			Paint.DrawText( boxRect.Shrink( 0f, 16f, 0f, 0f ), text, TextFlag.CenterTop );
+		}
 	}
 
 	private void BuildMenuBar()
@@ -260,9 +298,16 @@ public class VoxelAtlasTool : Window
 	private void LoadAtlas( string path )
 	{
 		var json = File.ReadAllText( path );
+
 		CurrentAtlas = JsonSerializer.Deserialize<Atlas>( json );
 		CurrentAtlas.LoadSprites();
+
 		Title = $"Voxel Atlas ({CurrentAtlas.FileName})";
+
+		if ( SpriteSizeSlider != null )
+		{
+			SpriteSizeSlider.Value = CurrentAtlas.SpriteSize;
+		}
 
 		UpdatePixmap();
 		Initialize();
@@ -372,6 +417,21 @@ public class VoxelAtlasTool : Window
 
 		if ( CurrentAtlas != null )
 		{
+			if ( SpriteSizeSlider != null )
+			{
+				SpriteSizeSlider.Destroy();
+				SpriteSizeSlider = null;
+
+			}
+			if ( SpriteSizeSlider == null )
+			{
+				/*
+				SpriteSizeSlider = new IntEditor( View );
+				SpriteSizeSlider.Value = CurrentAtlas.SpriteSize;
+				SpriteSizeSlider.OnValueEdited += OnSpriteSizeChanged;
+				*/
+			}
+
 			View.Width = Width;
 			View.Height = Height;
 
@@ -385,8 +445,27 @@ public class VoxelAtlasTool : Window
 			Preview.Position = Preview.Position - new Vector2( 0f, 64f );
 			Preview.Visible = true;
 
-			SaveOption.Enabled = true;
+			if ( SpriteSizeSlider != null )
+			{
+				SpriteSizeSlider.Width = View.Width * 0.3f;
+				SpriteSizeSlider.Position = new Vector2( View.Width * 0.5f - SpriteSizeSlider.Width * 0.5f, 60f );
+				SpriteSizeSlider.Visible = true;
+			}
+
 			FolderOption.Enabled = true;
+			SaveOption.Enabled = true;
+		}
+		else if ( SpriteSizeSlider != null )
+		{
+			SpriteSizeSlider.Visible = false;
+		}
+	}
+
+	private void OnSpriteSizeChanged()
+	{
+		if ( CurrentAtlas != null )
+		{
+			CurrentAtlas.SpriteSize = SpriteSizeSlider.Value;
 		}
 	}
 }
