@@ -301,6 +301,12 @@ public class VoxelAtlasTool : Window
 
 		CurrentAtlas = JsonSerializer.Deserialize<Atlas>( json );
 		CurrentAtlas.LoadSprites();
+		CurrentAtlas.FileName = Path.GetRelativePath( Directory.GetCurrentDirectory(), CurrentAtlas.FileName ).NormalizeFilename( false );
+
+		if ( !CurrentAtlas.FileName.EndsWith( ".json" ) )
+		{
+			CurrentAtlas.FileName += ".json";
+		}
 
 		Title = $"Voxel Atlas ({CurrentAtlas.FileName})";
 
