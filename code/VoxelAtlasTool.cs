@@ -187,10 +187,14 @@ public class VoxelAtlasTool : Window
 	{
 		CurrentAtlas = null;
 		Title = "Voxel Atlas";
-		Size = new Vector2( 800f, 600f );
+		ResizeButtonsVisible = false;
+		MaximumSize = new Vector2( 800f, 800f );
+		MinimumSize = MaximumSize;
+		Size = MaximumSize;
 
 		Initialize();
 		Show();
+		Focus();
 	}
 
 	protected override void OnResize()
