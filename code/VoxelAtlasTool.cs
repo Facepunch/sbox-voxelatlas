@@ -168,10 +168,10 @@ public class VoxelAtlasTool : Window
 
 		var fileDialog = new FileDialog( null );
 		fileDialog.Title = "Create Atlas..";
-		fileDialog.DefaultSuffix = ".atlas";
+		fileDialog.DefaultSuffix = ".atlas.json";
 		fileDialog.SetFindFile();
 		fileDialog.SetModeSave();
-		fileDialog.SetNameFilter( "Atlas (*.atlas)" );
+		fileDialog.SetNameFilter( "Atlas (*.atlas.json)" );
 
 		if ( !fileDialog.Execute() )
 			return;
@@ -190,7 +190,7 @@ public class VoxelAtlasTool : Window
 	{
 		var fileDialog = new FileDialog( null );
 		fileDialog.Title = $"Load Atlas";
-		fileDialog.SetNameFilter( "Atlas (*.atlas)" );
+		fileDialog.SetNameFilter( "Atlas (*.atlas.json)" );
 
 		if ( !fileDialog.Execute() )
 			return;
@@ -211,7 +211,7 @@ public class VoxelAtlasTool : Window
 
 	private async void RebuildAll()
 	{
-		var files = Directory.GetFiles( Directory.GetCurrentDirectory(), "*.atlas", SearchOption.AllDirectories );
+		var files = Directory.GetFiles( Directory.GetCurrentDirectory(), "*.atlas.json", SearchOption.AllDirectories );
 
 		foreach ( var file in files )
 		{
