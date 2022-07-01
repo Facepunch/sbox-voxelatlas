@@ -342,7 +342,7 @@ public class VoxelAtlasTool : Window
 		File.WriteAllText( CurrentAtlas.FileName, json );
 
 		var path = Path.GetDirectoryName( CurrentAtlas.FileName );
-		var name = Path.GetFileNameWithoutExtension( CurrentAtlas.FileName );
+		var name = Path.GetFileNameWithoutExtension( CurrentAtlas.FileName ).Replace( ".atlas", "" );
 
 		UpdatePixmap();
 
