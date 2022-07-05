@@ -341,10 +341,38 @@ public class VoxelAtlasTool : Window
 		var path = Path.GetDirectoryName( CurrentAtlas.FileName );
 		var name = Path.GetFileNameWithoutExtension( CurrentAtlas.FileName ).Replace( ".atlas", "" );
 
-		UpdatePixmap();
+		UpdatePixmapPowerOfTwo();
 
 		var savePath = Path.Join( path, $"{name}.png" ).NormalizeFilename( false );
 		AtlasPixmap.SavePng( savePath );
+
+		UpdatePixmap();
+	}
+
+	private void UpdatePixmapPowerOfTwo()
+	{
+		var pixmap = new Pixmap( 2048, 2048 );
+		var x = 0;
+		var y = 0;
+
+		pixmap.Clear( new Color( 0f, 0f, 0f, 0f ) );
+
+		Paint.Target( pixmap );
+
+		foreach ( var sprite in CurrentAtlas.Sprites )
+		{
+			Paint.Draw( new Rect( x, y, CurrentAtlas.SpriteSize, CurrentAtlas.SpriteSize ), sprite.Image );
+
+			x += CurrentAtlas.SpriteSize;
+
+			if ( x >= 2048 )
+			{
+				y += CurrentAtlas.SpriteSize;
+				x = 0;
+			}
+		}
+
+		AtlasPixmap = pixmap;
 	}
 
 	private void UpdatePixmap()
