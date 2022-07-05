@@ -19,7 +19,8 @@ public class Sprite
 	public void Load( Atlas atlas )
 	{
 		//var texture = Texture.Load( FileSystem.Root, FilePath );
-		var absolutePath = Path.Join( Directory.GetCurrentDirectory(), FilePath ).NormalizeFilename( false );
+		var root = Path.GetDirectoryName( atlas.FileName );
+		var absolutePath = Path.Join( root, FilePath ).NormalizeFilename( false );
 
 		Image = new Pixmap( atlas.SpriteSize, atlas.SpriteSize );
 		Image.Clear( new Color( 0f, 0f, 0f, 0f ) );
@@ -119,18 +120,21 @@ public class Atlas
 {
 	public List<Sprite> Sprites { get; set; } = new();
 	public string SpriteFolder { get; set; }
-	public string FileName { get; set; }
 	public int SpriteSize { get; set; } = 32;
+
+	[JsonIgnore]
+	public string FileName { get; set; }
 
 	public void LoadSprites()
 	{
 		Sprites.Clear();
 
-		var absolutePath = Path.Join( Directory.GetCurrentDirectory(), SpriteFolder ).NormalizeFilename( false );
+		var root = Path.GetDirectoryName( FileName );
+		var absolutePath = Path.Join( root, SpriteFolder ).NormalizeFilename( false );
 
 		foreach ( var file in Directory.EnumerateFiles( absolutePath, "*.png" ) )
 		{
-			var relativePath = Path.GetRelativePath( Directory.GetCurrentDirectory(), file ).NormalizeFilename( false );
+			var relativePath = Path.GetRelativePath( root, file ).NormalizeFilename( false );
 			var fileName = Path.GetFileNameWithoutExtension( relativePath );
 			var sprite = new Sprite();
 
@@ -272,7 +276,7 @@ public class VoxelAtlasTool : Window
 		if ( !fileDialog.Execute() )
 			return;
 
-		CurrentAtlas.FileName = Path.GetRelativePath( Directory.GetCurrentDirectory(), fileDialog.SelectedFile ).NormalizeFilename( false );
+		CurrentAtlas.FileName = fileDialog.SelectedFile.NormalizeFilename( false );
 		Title = $"Voxel Atlas ({CurrentAtlas.FileName})";
 
 		var json = JsonSerializer.Serialize( CurrentAtlas );
@@ -299,13 +303,9 @@ public class VoxelAtlasTool : Window
 		var json = File.ReadAllText( path );
 
 		CurrentAtlas = JsonSerializer.Deserialize<Atlas>( json );
+		Log.Info( path );
+		CurrentAtlas.FileName = path.NormalizeFilename( false );
 		CurrentAtlas.LoadSprites();
-		CurrentAtlas.FileName = Path.GetRelativePath( Directory.GetCurrentDirectory(), CurrentAtlas.FileName ).NormalizeFilename( false );
-
-		if ( !CurrentAtlas.FileName.EndsWith( ".json" ) )
-		{
-			CurrentAtlas.FileName += ".json";
-		}
 
 		Title = $"Voxel Atlas ({CurrentAtlas.FileName})";
 
@@ -335,8 +335,6 @@ public class VoxelAtlasTool : Window
 	{
 		if ( CurrentAtlas == null ) return;
 
-		CurrentAtlas.FileName = CurrentAtlas.FileName.NormalizeFilename( false );
-
 		var json = JsonSerializer.Serialize( CurrentAtlas );
 		File.WriteAllText( CurrentAtlas.FileName, json );
 
@@ -345,7 +343,7 @@ public class VoxelAtlasTool : Window
 
 		UpdatePixmap();
 
-		var savePath = Path.Join( Directory.GetCurrentDirectory(), Path.Join( path, $"{name}.png" ) ).NormalizeFilename( false );
+		var savePath = Path.Join( path, $"{name}.png" ).NormalizeFilename( false );
 		AtlasPixmap.SavePng( savePath );
 	}
 
@@ -397,7 +395,8 @@ public class VoxelAtlasTool : Window
 		if ( !fileDialog.Execute() )
 			return;
 
-		var path = Path.GetRelativePath( Directory.GetCurrentDirectory(), fileDialog.SelectedFile ).NormalizeFilename( false );
+		var root = Path.GetDirectoryName( CurrentAtlas.FileName );
+		var path = Path.GetRelativePath( root, fileDialog.SelectedFile ).NormalizeFilename( false );
 		CurrentAtlas.SpriteFolder = path;
 		CurrentAtlas.LoadSprites();
 
