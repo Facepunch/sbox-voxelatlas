@@ -188,7 +188,6 @@ public class VoxelAtlasTool : Window
 	{
 		CurrentAtlas = null;
 		Title = "Voxel Atlas";
-		ResizeButtonsVisible = false;
 		MaximumSize = new Vector2( 800f, 800f );
 		MinimumSize = MaximumSize;
 		Size = MaximumSize;

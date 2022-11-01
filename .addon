@@ -3,6 +3,7 @@
   "Type": "tool",
   "Org": "facepunch",
   "Ident": "voxelatlas",
+  "Tags": null,
   "Schema": 1,
   "HasAssets": true,
   "AssetsPath": "",
