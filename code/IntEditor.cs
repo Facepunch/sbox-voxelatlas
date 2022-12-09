@@ -1,6 +1,6 @@
-﻿using Sandbox;
+﻿using Editor;
+using Sandbox;
 using System;
-using Tools;
 
 namespace Facepunch.Voxels
 {
@@ -75,9 +75,9 @@ namespace Facepunch.Voxels
 
 			Paint.SetPenEmpty();
 			Paint.SetBrush( HighlightColor.Darken( hovered ? 0.7f : 0.8f ).Desaturate( 0.8f ) );
-			Paint.DrawRect( new Rect( 0, 0, h, h ).Expand( -1 ), 4f - 1.0f );
+			Paint.DrawRect( new Rect( 0, 0, h, h ).Grow( -1 ), 4f - 1.0f );
 
-			Paint.DrawRect( new Rect( h - 4f, 0, 4f, h ).Expand( -1 ) );
+			Paint.DrawRect( new Rect( h - 4f, 0, 4f, h ).Grow( -1 ) );
 
 			Paint.SetPen( HighlightColor.Darken( hovered ? 0.0f : 0.1f ).Desaturate( hovered ? 0.0f : 0.2f ) );
 
